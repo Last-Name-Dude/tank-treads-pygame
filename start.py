@@ -37,7 +37,7 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("purple")
 
-    tank_vector.xy = sin(tank_angle/180*pi), cos(tank_angle/180*pi)
+    tank_vector.xy = sin(tank_angle/180*pi), cos(tank_angle/180*pi) # tanki suunaline ühikvektor
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
