@@ -1,9 +1,12 @@
 import pygame
 from math import *
+import collision
 
 pygame.init()
 
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+
 tank_img = pygame.transform.scale(pygame.image.load("Tank.png"),(150,150))
 
 tank_vector = pygame.Vector2()
@@ -21,17 +24,6 @@ def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga mani
     e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 30
     e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 30
     surf.blit(rotated, e)
-    
-def kokkupõrge(bullet, tank):
-    ei_kattu_x1 = bullet[0].x > tank1.pos.x + 75 # kuul on tankist paremal pool, tanki laius 75
-    ei_kattu_x2 = tank1.pos.x > bullet[0].x + 15 # kuul on tankist vasakul, kuuli laius 15
-    ei_kattu_y1 = bullet[0].y > tank1.pos.y + 150 # kuul on tankist allpool, suurem y = ekraanil all, tanki pikkus 150
-    ei_kattu_y2 = tank1.pos.y > bullet[0].y + 15 # kuul on tankist ülevalpool, kuuli pikkus 15
-    
-    if ei_kattu_x1 or ei_kattu_x2 or ei_kattu_y1 or ei_kattu_y2:
-        return False # kattumist ei ole, järelikult kokkupõrget pole
-    
-    return True # midagi kattub, kokkupõrge toimunud
 
 running = True
 
@@ -80,8 +72,8 @@ class tank: #kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
         return(self.bullets)
 
 
-tank1 = tank(ekraani_keskkoht,0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
-tank2 = tank(ekraani_keskkoht + pygame.Vector2(200,0),0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
+tank1 = tank(pygame.Vector2(ekraani_keskkoht[:]),0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
+tank2 = tank(pygame.Vector2(ekraani_keskkoht[:]) + pygame.Vector2(200,0),0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
 
 while running:
     # pygame.QUIT event means the user clicked X to close your window
@@ -102,11 +94,18 @@ while running:
     tank2.check_input(dt,keys)
     tank2.draw(screen,tank_img)
 
+    hall = collision.update_rect(1000,100,15,pygame.Vector2(0,ekraani_keskkoht.y))
+    tank1_kast = collision.update_rect(100,80,tank1.angle,tank1.pos)
+    pygame.draw.polygon(screen, "gray", hall)
+    pygame.draw.polygon(screen, "green", tank1_kast,3)
+
+    collision.check_rect_rect(hall,tank1_kast)
+
     for bullet in tank1.update_bullets() + tank2.update_bullets():
         pygame.draw.circle(screen, "black", bullet[0], 7)
-        
-        if kokkupõrge(bullet, tank) == True:
-            pygame.quit() # see paneb praegu kinni kui kuuliga saad pihta
+        if collision.check_circ_rect(bullet[0],7,collision.update_rect(100,80,tank1.angle,tank1.pos),tank1.pos) == True:
+            print("Hit!")
+            # pygame.quit() # see paneb praegu kinni kui kuuliga saad pihta
 
     pygame.display.flip()
 
