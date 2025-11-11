@@ -21,6 +21,17 @@ def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga mani
     e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 30
     e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 30
     surf.blit(rotated, e)
+    
+def kokkupõrge(bullet, tank):
+    ei_kattu_x1 = bullet[0].x > tank1.pos.x + 75 # kuul on tankist paremal pool, tanki laius 75
+    ei_kattu_x2 = tank1.pos.x > bullet[0].x + 15 # kuul on tankist vasakul, kuuli laius 15
+    ei_kattu_y1 = bullet[0].y > tank1.pos.y + 150 # kuul on tankist allpool, suurem y = ekraanil all, tanki pikkus 150
+    ei_kattu_y2 = tank1.pos.y > bullet[0].y + 15 # kuul on tankist ülevalpool, kuuli pikkus 15
+    
+    if ei_kattu_x1 or ei_kattu_x2 or ei_kattu_y1 or ei_kattu_y2:
+        return False # kattumist ei ole, järelikult kokkupõrget pole
+    
+    return True # midagi kattub, kokkupõrge toimunud
 
 running = True
 
@@ -93,6 +104,9 @@ while running:
 
     for bullet in tank1.update_bullets() + tank2.update_bullets():
         pygame.draw.circle(screen, "black", bullet[0], 7)
+        
+        if kokkupõrge(bullet, tank) == True:
+            pygame.quit() # see paneb praegu kinni kui kuuliga saad pihta
 
     pygame.display.flip()
 
