@@ -1,6 +1,7 @@
 import pygame
 from math import *
 import collision
+#Silver Erm ja Priit Laidmaa
 
 pygame.init()
 
@@ -27,7 +28,16 @@ def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga mani
 
 running = True
 
-class tank: #kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
+class tank:
+    """
+    Kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
+    attributes:
+    pos on tanki asukoht
+    angle on tanki nurk
+    vektor on tanki sihivektor
+    binds on järjend, kus on sees tanki juhtimiseks vajalikud nupud nt: [key_w,key_a,key_s,key_d,key_space], kus viimane on tulistamiseks ja ülejäänud liikumiseks
+    bullets on järjend, kus on sees kõik selle tanki välja tulistatud kuulid
+    """
     bullets = []
     delay = 0
     def __init__(self,pos,angle,vector,binds):
@@ -42,6 +52,9 @@ class tank: #kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
             self.delay -= 100*dt
 
     def check_input(self,dt,keys):
+        """
+        kontrollib sisendite vastavust määratud nuppudele ja tegutseb vastavalt
+        """
         if keys[self.binds[0]]:
             self.pos.x -= 300 * dt * self.vector.x
             self.pos.y -= 300 * dt * self.vector.y
@@ -60,10 +73,14 @@ class tank: #kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
             self.delay = 50
 
     def draw(self,screen, img):
+        """Joonistab tanki ekraanile"""
         transform_bilt_center(screen, img, self.pos, self.angle, self.vector)
 
     def update_bullets(self):
-        for bullet in self.bullets: #vaatab üle kõik kuulid järjendis ja liigutab neid ja vajadusel ka kustutab
+        """
+        vaatab üle kõik kuulid järjendis ja liigutab neid ja vajadusel ka kustutab
+        """
+        for bullet in self.bullets:
             bullet[0].x -= bullet[1].x * dt * kuuli_kiirus
             bullet[0].y -= bullet[1].y * dt * kuuli_kiirus
             bullet[2] -= dt * 10
@@ -76,15 +93,16 @@ tank1 = tank(pygame.Vector2(ekraani_keskkoht[:]),0,pygame.Vector2(),[pygame.K_w,
 tank2 = tank(pygame.Vector2(ekraani_keskkoht[:]) + pygame.Vector2(200,0),0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
 
 while running:
-    # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
+    #kirjutab kogu ekraani üle
     screen.fill("black")
 
     keys = pygame.key.get_pressed() #nupud
 
+    #Kutsume välja igale tankile vastavad funktsioonid
     tank1.update(dt)
     tank1.check_input(dt,keys)
     tank1.draw(screen,tank_img)
@@ -96,9 +114,9 @@ while running:
     hall = collision.update_rect(100,100,15,pygame.Vector2(400,500))
     tank1_kast = collision.update_rect(100,80,tank1.angle,tank1.pos)
     pygame.draw.polygon(screen, "gray", hall)
-    pygame.draw.polygon(screen, "green", tank1_kast,3)
-    pygame.draw.line(screen,"red",hall[0],hall[1])
+    pygame.draw.polygon(screen, "green", tank1_kast,3) #joonistame tangi collision kasti debugimiseks
 
+    #Hetkel ei ole veel lisatud seinasid, ja kokkupõrke tagajärgi, seega lihtsalt prindime
     if collision.check_rect_rect(hall,tank1_kast):
         print("colliding!")
 
