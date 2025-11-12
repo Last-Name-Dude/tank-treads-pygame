@@ -4,8 +4,8 @@ import collision
 
 pygame.init()
 
-screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-
+# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((1200, 900))
 
 tank_img = pygame.transform.scale(pygame.image.load("Tank.png"),(150,150))
 
@@ -81,8 +81,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
+    screen.fill("black")
 
     keys = pygame.key.get_pressed() #nupud
 
@@ -94,15 +93,17 @@ while running:
     tank2.check_input(dt,keys)
     tank2.draw(screen,tank_img)
 
-    hall = collision.update_rect(1000,100,15,pygame.Vector2(0,ekraani_keskkoht.y))
+    hall = collision.update_rect(100,100,15,pygame.Vector2(400,500))
     tank1_kast = collision.update_rect(100,80,tank1.angle,tank1.pos)
     pygame.draw.polygon(screen, "gray", hall)
     pygame.draw.polygon(screen, "green", tank1_kast,3)
+    pygame.draw.line(screen,"red",hall[0],hall[1])
 
-    collision.check_rect_rect(hall,tank1_kast)
+    if collision.check_rect_rect(hall,tank1_kast):
+        print("colliding!")
 
     for bullet in tank1.update_bullets() + tank2.update_bullets():
-        pygame.draw.circle(screen, "black", bullet[0], 7)
+        pygame.draw.circle(screen, "grey", bullet[0], 7)
         if collision.check_circ_rect(bullet[0],7,collision.update_rect(100,80,tank1.angle,tank1.pos),tank1.pos) == True:
             print("Hit!")
             # pygame.quit() # see paneb praegu kinni kui kuuliga saad pihta
