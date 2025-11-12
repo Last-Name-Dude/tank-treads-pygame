@@ -1,7 +1,7 @@
 import pygame
 from math import *
 import collision
-#Silver Erm ja Priit Laidmaa
+#Silver Erm ja Priit Laidma
 
 pygame.init()
 
