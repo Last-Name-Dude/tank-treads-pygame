@@ -1,3 +1,6 @@
 Silver Erm ja Priit Laidmaa
 
 Tanki mängu projekt
+
+Käivitamiseks sisestage käsureale "python start.py"
+Vajalikud lisamoodulid, mis peavad olema installitud on: pygame
