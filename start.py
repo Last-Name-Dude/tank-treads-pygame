@@ -18,7 +18,7 @@ kuuli_kiirus = 300
 ekraani_keskkoht = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
 all_bullets = []
-objects = [] #objektide list. Olgu selleks kas seinad, teised tangid vms
+objects = [] #objektide kogum. Olgu selleks kas seinad, teised tangid vms
 
 def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata
     rotated = pygame.transform.rotate(img,angle)
@@ -64,8 +64,8 @@ class tank:
             self.vel.x = -300 * dt * self.vector.x
             self.vel.y = -300 * dt * self.vector.y
         if keys[self.binds[2]]:
-            self.vel.x = 300 * dt * self.vector.x
-            self.vel.y = 300 * dt * self.vector.y
+            self.vel.x = 250 * dt * self.vector.x
+            self.vel.y = 250 * dt * self.vector.y
         if keys[self.binds[1]]:
             self.ang_vel = 120 * dt
         if keys[self.binds[3]]:
@@ -118,15 +118,24 @@ while running:
     tank2.check_input(dt,keys)
     tank2.draw(screen,tank_img)
 
+    tank_collision = [collision.update_rect(100,80,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
+    bool_collision = False
+    for tank,col in zip([tank1,tank2],tank_collision):
+        for obj in objects + tank_collision:
+            if obj == col:
+                continue
+            if collision.check_rect_rect(obj,col):
+                bool_collision = True
+                break
+        if not bool_collision:
+            tank.pos += tank.vel
+            tank.angle += tank.ang_vel
+
+        pygame.draw.polygon(screen, "green", col,3) #joonistame tangi collision kasti debugimiseks
+
     for obj in objects:
         pygame.draw.polygon(screen, "gray", obj)
-        for tank in [tank1,tank2]:
-            tank_kast = collision.update_rect(100,80,tank.ang_vel + tank.angle,tank.pos + tank.vel)
-            if not collision.check_rect_rect(obj,tank_kast):
-                tank.pos += tank.vel
-                tank.angle += tank.ang_vel
 
-            pygame.draw.polygon(screen, "green", tank_kast,3) #joonistame tangi collision kasti debugimiseks
 
     for bullet in tank1.update_bullets():
         pygame.draw.circle(screen, "black", bullet[0], 7)
