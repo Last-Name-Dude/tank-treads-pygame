@@ -18,6 +18,7 @@ kuuli_kiirus = 300
 ekraani_keskkoht = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
 all_bullets = []
+objects = [] #objektide list. Olgu selleks kas seinad, teised tangid vms
 
 def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata
     rotated = pygame.transform.rotate(img,angle)
@@ -40,6 +41,8 @@ class tank:
     """
     bullets = []
     delay = 0
+    vel = pygame.Vector2(0,0) #kiirus
+    ang_vel = 0 #nurkkiirus
     def __init__(self,pos,angle,vector,binds):
         self.pos = pos
         self.angle = angle
@@ -55,16 +58,18 @@ class tank:
         """
         kontrollib sisendite vastavust määratud nuppudele ja tegutseb vastavalt
         """
+        self.vel = pygame.Vector2(0,0)
+        self.ang_vel = 0
         if keys[self.binds[0]]:
-            self.pos.x -= 300 * dt * self.vector.x
-            self.pos.y -= 300 * dt * self.vector.y
+            self.vel.x = -300 * dt * self.vector.x
+            self.vel.y = -300 * dt * self.vector.y
         if keys[self.binds[2]]:
-            self.pos.x += 300 * dt * self.vector.x
-            self.pos.y += 300 * dt * self.vector.y
+            self.vel.x = 300 * dt * self.vector.x
+            self.vel.y = 300 * dt * self.vector.y
         if keys[self.binds[1]]:
-            self.angle += 90 * dt
+            self.ang_vel = 120 * dt
         if keys[self.binds[3]]:
-            self.angle -= 90 * dt
+            self.ang_vel = -120 * dt
         if keys[self.binds[4]] and self.delay <= 0:
             kuuli_algpunkt = pygame.Vector2(self.pos[:])
             kuuli_algvektor = pygame.Vector2(self.vector[:])
@@ -92,13 +97,15 @@ class tank:
 tank1 = tank(pygame.Vector2(ekraani_keskkoht[:]),0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
 tank2 = tank(pygame.Vector2(ekraani_keskkoht[:]) + pygame.Vector2(200,0),0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
 
+objects.append(collision.update_rect(200,50,40,pygame.Vector2(400,500)))
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     #kirjutab kogu ekraani üle
-    screen.fill("black")
+    screen.fill("#7c6e44")
 
     keys = pygame.key.get_pressed() #nupud
 
@@ -111,18 +118,24 @@ while running:
     tank2.check_input(dt,keys)
     tank2.draw(screen,tank_img)
 
-    hall = collision.update_rect(100,100,15,pygame.Vector2(400,500))
-    tank1_kast = collision.update_rect(100,80,tank1.angle,tank1.pos)
-    pygame.draw.polygon(screen, "gray", hall)
-    pygame.draw.polygon(screen, "green", tank1_kast,3) #joonistame tangi collision kasti debugimiseks
+    for obj in objects:
+        pygame.draw.polygon(screen, "gray", obj)
+        for tank in [tank1,tank2]:
+            tank_kast = collision.update_rect(100,80,tank.ang_vel + tank.angle,tank.pos + tank.vel)
+            if not collision.check_rect_rect(obj,tank_kast):
+                tank.pos += tank.vel
+                tank.angle += tank.ang_vel
 
-    #Hetkel ei ole veel lisatud seinasid, ja kokkupõrke tagajärgi, seega lihtsalt prindime
-    if collision.check_rect_rect(hall,tank1_kast):
-        print("colliding!")
+            pygame.draw.polygon(screen, "green", tank_kast,3) #joonistame tangi collision kasti debugimiseks
 
-    for bullet in tank1.update_bullets() + tank2.update_bullets():
-        pygame.draw.circle(screen, "grey", bullet[0], 7)
-        if collision.check_circ_rect(bullet[0],7,collision.update_rect(100,80,tank1.angle,tank1.pos),tank1.pos) == True:
+    for bullet in tank1.update_bullets():
+        pygame.draw.circle(screen, "black", bullet[0], 7)
+        for obj in objects:
+            coll_info = collision.check_circ_rect(bullet[0],7,obj)
+            if coll_info[0]:
+                bullet[1] = bullet[1].reflect(coll_info[1])
+
+        if collision.check_circ_rect(bullet[0],7,collision.update_rect(100,80,tank1.angle,tank1.pos))[0] == True:
             print("Hit!")
             # pygame.quit() # see paneb praegu kinni kui kuuliga saad pihta
 
