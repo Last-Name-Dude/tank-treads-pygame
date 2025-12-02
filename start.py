@@ -150,6 +150,7 @@ while running:
         timeout_time -= 1*dt
         if timeout_time <= 0:
             reset = True
+
     if reset:
         bullets = []
         objects,dobjects,spawnpoints,s = map_generator(randint(1,3))
