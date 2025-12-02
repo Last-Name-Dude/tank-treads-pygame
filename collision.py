@@ -1,7 +1,7 @@
 from math import *
 from pygame import Vector2
 
-def update_rect(pikk,lai,nurk,pos):
+def update_rect(lai,pikk,nurk,pos):
     """
     Tagastab parameetritele vastava ristküliku nurkade punktid
     """
