@@ -160,7 +160,7 @@ while running:
         tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
-        reset = False
+        reset = True
         timeout = False
 
     for event in pygame.event.get():
