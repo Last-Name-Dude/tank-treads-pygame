@@ -155,14 +155,14 @@ while running:
 
     if reset:
         bullets = []
-        objects,dobjects,spawnpoints,s = map_generator(randint(1,3))
+        objects,dobjects,spawnpoints,s = map_generator(randint(1,5))
         spawn_choice = randint(0,1)
         tank1 = tank(spawnpoints[spawn_choice],0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
         tank2 = tank(spawnpoints[spawn_choice-1],0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
         tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
-        reset = False
+        reset = True
         timeout = False
 
     for event in pygame.event.get():
