@@ -11,7 +11,9 @@ screen_w = 1400
 screen_h = 900
 screen = pygame.display.set_mode((screen_w, screen_h))
 
-tank_img = pygame.transform.scale(pygame.image.load("Tank.png"),(150,150))
+green_tank_img = pygame.transform.scale(pygame.image.load("roheline_tank.png"),(150,150))
+blu_tank_img = pygame.transform.scale(pygame.image.load("sinine_tank.png"),(150,150))
+
 
 tank_vector = pygame.Vector2()
 tank_angle = 0
@@ -176,11 +178,11 @@ while running:
     if tank1 is not None:
         tank1.update(dt)
         tank1.check_input(dt,keys)
-        tank1.draw(screen,tank_img)
+        tank1.draw(screen,green_tank_img)
     if tank2 is not None:
         tank2.update(dt)
         tank2.check_input(dt,keys)
-        tank2.draw(screen,tank_img)
+        tank2.draw(screen,blu_tank_img)
 
     #tank_collision = [collision.update_rect(80*s,100*s,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
 
