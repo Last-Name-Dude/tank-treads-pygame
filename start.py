@@ -1,7 +1,9 @@
 import pygame as pg
 from math import *
 import collision
+import particles
 from random import randint
+from random import uniform
 #Silver Erm ja Priit Laidma
 
 pg.init()
@@ -10,6 +12,7 @@ pg.init()
 screen_w = 1400
 screen_h = 900
 screen = pg.display.set_mode((screen_w, screen_h))
+bilt_layer = pg.Surface((screen_w,screen_h))
 
 green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(150,150))
 blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(150,150))
@@ -84,9 +87,9 @@ class Tank:
             bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg
             self.delay = 150
 
-    def draw(self,screen, img):
+    def draw(self,surf, img):
         """Joonistab tanki ekraanile"""
-        transform_bilt_center(screen, img, self.pos, self.angle, self.vector)
+        transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
 
     # def update_bullets(self):
     #     for b in self.bullets:
@@ -97,12 +100,12 @@ class Tank:
     #             self.bullets.remove(b)
 
 class bullet:
-    def __init__(self,pos,vec,time,shooter):
+    def __init__(self,pos,vec,time,owner):
         self.pos = pos
         self.vec = vec
         self.time = time
         self.radius = bullet_r*s
-        self.shooter = shooter # seob kuuli ja tanki, mis ta välja tulistas
+        self.owner = owner # seob kuuli ja tanki, mis ta välja tulistas
 
 class Wall:
     def __init__(self,lai,pikk,angle,pos,color):
@@ -110,6 +113,14 @@ class Wall:
         self.points = collision.update_rect(lai,pikk,angle,pos)
         self.hp = 3
         self.color = color
+
+def offset(count, size,time, dt):
+    while count > 0:
+        count -= dt * time
+        yield (uniform(0,1)*size*count**2, uniform(0,1)*size*count**2)
+    while True:
+        yield (0, 0)
+
 
 def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata
     rotated = pg.transform.rotate(pg.transform.scale_by(img,s),angle)
@@ -123,8 +134,7 @@ def map_generator(nr):
     ret_objects = [] #objektide kogum. Olgu selleks kas seinad, teised tangid vms
     ret_spawnpoints = []
     with open("maps/map_0" + str(nr) +".txt") as f: gamemap = [i.strip() for i in f.readlines()]
-    scale_w = screen_w/(len(list(gamemap[0])))
-    scale_h = screen_h/(len(gamemap))
+
     ret_s = 8/max([len(list(gamemap[0]))/2,len(gamemap)]) #väga oluline muutuja. Skaleerib kõike mängus
 
     scale_w = screen_w/(len(list(gamemap[0]))/2+0.5)
@@ -155,11 +165,14 @@ global tank1_skoor, tank2_skoor
 tank1_skoor = 0
 tank2_skoor = 0 # mängu alguses mõlemal 0 punkti
 
+shake = offset(0,10, 10,dt)
 running = True
 timeout = False
 reset = True
 
 timeout_time = 0
+
+particuls = particles.particles_initalize()
 
 while running:
     if timeout:
@@ -173,7 +186,7 @@ while running:
         spawn_choice = randint(0,1)
         tank1 = Tank(spawnpoints[spawn_choice], 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
         tank2 = Tank(spawnpoints[spawn_choice - 1], 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
-        tanklist = [(tank1, 1), (tank2, 2)] # 1 ja 2 on mängija ID-d
+        tanklist = [tank1,tank2] # 1 ja 2 on mängija ID-d
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
         reset = False
@@ -184,7 +197,7 @@ while running:
             running = False
 
     #kirjutab kogu ekraani üle
-    screen.fill("#587270")
+    bilt_layer.fill("#587270")
 
     keys = pg.key.get_pressed() #nupud
 
@@ -192,18 +205,18 @@ while running:
     if tank1 is not None:
         tank1.update(dt)
         tank1.check_input(dt,keys)
-        tank1.draw(screen,green_tank_img)
+        tank1.draw(bilt_layer,green_tank_img)
     if tank2 is not None:
         tank2.update(dt)
         tank2.check_input(dt,keys)
-        tank2.draw(screen,blu_tank_img)
+        tank2.draw(bilt_layer,blu_tank_img)
 
     #tank_collision = [collision.update_rect(80*s,100*s,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
 
-    for t, ID in tanklist:
-        pg.draw.polygon(screen, "green", t.points, 3) # tanki collision kast debugimiseks
+    for t in tanklist:
+        pg.draw.polygon(bilt_layer, "green", t.points, 3) # tanki collision kast debugimiseks
         bool_collision = False
-        other_tanks = [other_t for other_t, id in tanklist if other_t != t]
+        other_tanks = [other_t for other_t in tanklist if other_t != t]
         
         all_collision_objects = dobjects + objects + other_tanks
         
@@ -213,40 +226,13 @@ while running:
                 break
         if not bool_collision:
             t.pos += t.vel
-            t.angle += t.ang_vel        # siin kogu see blokk 203-216 ma ei ole päris kindel mis see on
-                                        # sest ma ei osanud ja siis AI aitas kõvasti lol 
-        bullets_to_remove = []
-        for b in bullets:
-            if collision.check_circ_rect(b.pos,b.radius,collision.update_rect(100,80,t.angle,t.pos))[0]:
-                print("Hit!")
-                shooter_tank = b.shooter
-                
-                if shooter_tank == t:  # siin annab vastasele punkti, kui kogemata ennast lased
-                    if t == tank1:
-                        tank2_skoor += 1
-                    elif t == tank2:
-                        tank1_skoor += 1
-                else:
-                    if shooter_tank == tank1: # annab punkti, kui vastast lased
-                        tank1_skoor += 1
-                    elif shooter_tank == tank2:
-                        tank2_skoor += 1
-                print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
-                bullets_to_remove.append(b)
-                
-                timeout_time = 3
-                timeout = True
-                tanklist.remove((t, ID))
-                break
-        for b in bullets_to_remove:
-            if b in bullets:
-                bullets.remove(b)
+            t.angle += t.ang_vel
 
     for obj in objects + dobjects:
-        pg.draw.polygon(screen, obj.color, obj.points)
+        pg.draw.polygon(bilt_layer, obj.color, obj.points)
 
     for b in bullets:
-        pg.draw.circle(screen, "black", b.pos, b.radius)
+        pg.draw.circle(bilt_layer, "black", b.pos, b.radius)
         for obj in objects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
@@ -255,6 +241,7 @@ while running:
         for obj in dobjects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
+                particles.puff(bilt_layer, (400, 100), 1, 1)
                 b.vec = b.vec.reflect(coll_info[1])
                 obj.hp -= 1
                 if obj.hp == 3:
@@ -266,17 +253,36 @@ while running:
                 elif obj.hp == 0:
                     dobjects.remove(obj)
 
+        for t in tanklist:
+            if collision.check_circ_rect(b.pos, b.radius, collision.update_rect(100, 80, t.angle, t.pos))[0]:
+                print("Hit!")
+                shake = offset(1,20, 1, dt)
+                if t == tank1:
+                    tank2_skoor += 1
+                elif t == tank2:
+                    tank1_skoor += 1
+                print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
+                timeout_time = 3
+                timeout = True
+                tanklist.remove(t)
+                bullets.remove(b)
+                break
 
         b.pos -= b.vec * dt * scaled_bullet_speed
         b.time -= dt * 10
         b.radius = (bullet_r*0.2*b.time/bullet_time + 0.8*bullet_r)*s
         if b.time <= 0:
             bullets.remove(b)
-        
+
+    particuls.update(dt)
+    particuls.draw(bilt_layer)
+
     score_text = font.render(f"Roheline: {tank1_skoor} | Sinine: {tank2_skoor}", True, (0, 0, 0))
     score_rect = score_text.get_rect(center=(screen_w // 2, 30))
-    screen.blit(score_text, score_rect)
-    
+    bilt_layer.blit(score_text, score_rect)
+
+    screen.blit(bilt_layer, next(shake))
+
     pg.display.flip()
 
     # piirab FPS 120
