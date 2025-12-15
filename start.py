@@ -1,23 +1,23 @@
-import pygame
+import pygame as pg
 from math import *
 import collision
 from random import randint
 #Silver Erm ja Priit Laidma
 
-pygame.init()
+pg.init()
 
-# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+# screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
 screen_w = 1400
 screen_h = 900
-screen = pygame.display.set_mode((screen_w, screen_h))
+screen = pg.display.set_mode((screen_w, screen_h))
 
-green_tank_img = pygame.transform.scale(pygame.image.load("roheline_tank.png"),(150,150))
-blu_tank_img = pygame.transform.scale(pygame.image.load("sinine_tank.png"),(150,150))
+green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(150,150))
+blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(150,150))
 
 
-tank_vector = pygame.Vector2()
+tank_vector = pg.Vector2()
 tank_angle = 0
-clock = pygame.time.Clock()
+clock = pg.time.Clock()
 dt = 0
 bullet_time = 80
 bullet_speed = 400
@@ -26,9 +26,9 @@ tank_speed = 300
 s = 1
 bullets = []
 
-# ekraani_keskkoht = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+# ekraani_keskkoht = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
-class tank:
+class Tank:
     """
     Kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
     attributes:
@@ -38,7 +38,7 @@ class tank:
     binds on järjend, kus on sees tanki juhtimiseks vajalikud nupud nt: [key_w,key_a,key_s,key_d,key_space], kus viimane on tulistamiseks ja ülejäänud liikumiseks
     """
     delay = 0
-    vel = pygame.Vector2(0,0) #kiirus
+    vel = pg.Vector2(0,0) #kiirus
     ang_vel = 0 #nurkkiirus
     def __init__(self,pos,angle,vector,binds):
         self.pos = pos
@@ -57,7 +57,7 @@ class tank:
         """
         kontrollib sisendite vastavust määratud nuppudele ja tegutseb vastavalt
         """
-        self.vel = pygame.Vector2(0,0)
+        self.vel = pg.Vector2(0,0)
         self.ang_vel = 0
         if keys[self.binds[0]]:
             self.vel.x = -scaled_tank_speed * dt * self.vector.x
@@ -70,8 +70,8 @@ class tank:
         if keys[self.binds[3]]:
             self.ang_vel = -120 * dt
         if keys[self.binds[4]] and self.delay <= 0:
-            kuuli_algpunkt = pygame.Vector2(self.pos[:])
-            kuuli_algvektor = pygame.Vector2(self.vector[:])
+            kuuli_algpunkt = pg.Vector2(self.pos[:])
+            kuuli_algvektor = pg.Vector2(self.vector[:])
             kuuli_algpunkt -= kuuli_algvektor*80*s #offset, et näeks välja nagu kuul tuleks torust
             bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time)) #asukoht, sihivektor ja eluaeg
             self.delay = 150
@@ -95,15 +95,16 @@ class bullet:
         self.time = time
         self.radius = bullet_r*s
 
-class wall:
-    def __init__(self,lai,pikk,angle,pos):
+class Wall:
+    def __init__(self,lai,pikk,angle,pos,color):
         self.pos = pos
         self.points = collision.update_rect(lai,pikk,angle,pos)
         self.hp = 3
+        self.color = color
 
 def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata
-    rotated = pygame.transform.rotate(pygame.transform.scale_by(img,s),angle)
-    e = pygame.Vector2()
+    rotated = pg.transform.rotate(pg.transform.scale_by(img,s),angle)
+    e = pg.Vector2()
     e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 30 * s
     e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 30 * s
     surf.blit(rotated, e)
@@ -125,21 +126,21 @@ def map_generator(nr):
             if item == "-":
                 continue
             elif item == "s":
-                ret_spawnpoints.append(pygame.Vector2(j*scale_w/2+scale_w/2,i*scale_h+scale_h))
+                ret_spawnpoints.append(pg.Vector2(j*scale_w/2+scale_w/2,i*scale_h+scale_h))
             elif item == "b":
                 if i%2 == 0:
-                    ret_dobjects.append(wall(scale_w/10,scale_h*2,0,pygame.Vector2(j/2*scale_w+scale_w/2,i*scale_h+scale_h)))
+                    ret_dobjects.append(Wall(scale_w/10,scale_h*2,0,pg.Vector2(j/2*scale_w+scale_w/2,i*scale_h+scale_h),"#dfe0d9"))
                 else:
-                    ret_dobjects.append(wall(scale_w,scale_h/10,0,pygame.Vector2(j/2*scale_w+scale_w/2,i*scale_h+scale_h)))
+                    ret_dobjects.append(Wall(scale_w,scale_h/10,0,pg.Vector2(j/2*scale_w+scale_w/2,i*scale_h+scale_h),"#dfe0d9"))
 
-    ret_objects.append(wall(screen_w,10,0,pygame.Vector2(screen_w/2,0)))
-    ret_objects.append(wall(screen_w,10,0,pygame.Vector2(screen_w/2,screen_h)))
-    ret_objects.append(wall(10,screen_h,0,pygame.Vector2(0,screen_h/2)))
-    ret_objects.append(wall(10,screen_h,0,pygame.Vector2(screen_w,screen_h/2)))
+    ret_objects.append(Wall(screen_w,10,0,pg.Vector2(screen_w/2,0),"#514f51"))
+    ret_objects.append(Wall(screen_w,10,0,pg.Vector2(screen_w/2,screen_h),"#514f51"))
+    ret_objects.append(Wall(10,screen_h,0,pg.Vector2(0,screen_h/2),"#514f51"))
+    ret_objects.append(Wall(10,screen_h,0,pg.Vector2(screen_w,screen_h/2),"#514f51"))
     return(ret_objects,ret_dobjects,ret_spawnpoints,ret_s)
 
-tank1 = tank(pygame.Vector2(0,0),0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
-tank2 = tank(pygame.Vector2(0,0),0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
+tank1 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
+tank2 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
 
 running = True
 timeout = False
@@ -157,22 +158,22 @@ while running:
         bullets = []
         objects,dobjects,spawnpoints,s = map_generator(randint(1,5))
         spawn_choice = randint(0,1)
-        tank1 = tank(spawnpoints[spawn_choice],0,pygame.Vector2(),[pygame.K_w,pygame.K_a,pygame.K_s,pygame.K_d,pygame.K_SPACE])
-        tank2 = tank(spawnpoints[spawn_choice-1],0,pygame.Vector2(),[pygame.K_UP,pygame.K_LEFT,pygame.K_DOWN,pygame.K_RIGHT,pygame.K_RCTRL])
+        tank1 = Tank(spawnpoints[spawn_choice], 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
+        tank2 = Tank(spawnpoints[spawn_choice - 1], 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
         tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
-        reset = True
+        reset = False
         timeout = False
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
             running = False
 
     #kirjutab kogu ekraani üle
     screen.fill("#587270")
 
-    keys = pygame.key.get_pressed() #nupud
+    keys = pg.key.get_pressed() #nupud
 
     #Kutsume välja igale tankile vastavad funktsioonid
     if tank1 is not None:
@@ -187,7 +188,7 @@ while running:
     #tank_collision = [collision.update_rect(80*s,100*s,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
 
     for t in tanklist:
-        pygame.draw.polygon(screen, "green", t.points,3) #joonistame tangi collision kasti debugimiseks
+        pg.draw.polygon(screen, "green", t.points,3) #joonistame tangi collision kasti debugimiseks
         bool_collision = False
         for obj in dobjects + objects + tanklist:
             if obj == t:
@@ -200,26 +201,18 @@ while running:
             t.angle += t.ang_vel
 
         for b in bullets:
-            if collision.check_circ_rect(b.pos,b.radius,collision.update_rect(100,80,t.angle,t.pos))[0] == True:
+            if collision.check_circ_rect(b.pos,b.radius,collision.update_rect(100,80,t.angle,t.pos))[0]:
                 print("Hit!")
                 timeout_time = 3
                 timeout = True
                 tanklist[tanklist.index(t)] = None
                 tanklist.remove(None)
 
-    for obj in objects:
-        pygame.draw.polygon(screen, "#262625", obj.points)
-
-    for obj in dobjects:
-        if obj.hp == 3:
-            pygame.draw.polygon(screen, "#dfe0d9", obj.points)
-        if obj.hp == 2:
-            pygame.draw.polygon(screen, "#999b82", obj.points)
-        if obj.hp == 1:
-            pygame.draw.polygon(screen, "#874a29", obj.points)
+    for obj in objects + dobjects:
+        pg.draw.polygon(screen, obj.color, obj.points)
 
     for b in bullets:
-        pygame.draw.circle(screen, "black", b.pos, b.radius)
+        pg.draw.circle(screen, "black", b.pos, b.radius)
         for obj in objects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
@@ -230,8 +223,15 @@ while running:
             if coll_info[0]:
                 b.vec = b.vec.reflect(coll_info[1])
                 obj.hp -= 1
-                if obj.hp == 0:
+                if obj.hp == 3:
+                    obj.color = "#dfe0d9"
+                elif obj.hp == 2:
+                    obj.color = "#999b82"
+                elif obj.hp == 1:
+                    obj.color = "#874a29"
+                elif obj.hp == 0:
                     dobjects.remove(obj)
+
 
         b.pos -= b.vec * dt * scaled_bullet_speed
         b.time -= dt * 10
@@ -239,9 +239,9 @@ while running:
         if b.time <= 0:
             bullets.remove(b)
 
-    pygame.display.flip()
+    pg.display.flip()
 
     # piirab FPS 120
     dt = clock.tick(120) / 1000
 
-pygame.quit()
+pg.quit()
