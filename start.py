@@ -14,6 +14,14 @@ screen = pg.display.set_mode((screen_w, screen_h))
 green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(150,150))
 blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(150,150))
 
+# skooriloenduri font
+try:
+    font = pg.font.Font(None, 75)  
+except pg.error:
+    font = pg.font.SysFont("arial", 75)
+
+# üritab default fonti kasutada, kui miskipärast default font puudub, siis
+# proovib ariali peale panna, lootuses, et arial on olemas
 
 tank_vector = pg.Vector2()
 tank_angle = 0
@@ -73,7 +81,7 @@ class Tank:
             kuuli_algpunkt = pg.Vector2(self.pos[:])
             kuuli_algvektor = pg.Vector2(self.vector[:])
             kuuli_algpunkt -= kuuli_algvektor*80*s #offset, et näeks välja nagu kuul tuleks torust
-            bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time)) #asukoht, sihivektor ja eluaeg
+            bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg
             self.delay = 150
 
     def draw(self,screen, img):
@@ -89,11 +97,12 @@ class Tank:
     #             self.bullets.remove(b)
 
 class bullet:
-    def __init__(self,pos,vec,time):
+    def __init__(self,pos,vec,time,shooter):
         self.pos = pos
         self.vec = vec
         self.time = time
         self.radius = bullet_r*s
+        self.shooter = shooter # seob kuuli ja tanki, mis ta välja tulistas
 
 class Wall:
     def __init__(self,lai,pikk,angle,pos,color):
@@ -142,6 +151,10 @@ def map_generator(nr):
 tank1 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
 tank2 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
 
+global tank1_skoor, tank2_skoor
+tank1_skoor = 0
+tank2_skoor = 0 # mängu alguses mõlemal 0 punkti
+
 running = True
 timeout = False
 reset = True
@@ -160,7 +173,7 @@ while running:
         spawn_choice = randint(0,1)
         tank1 = Tank(spawnpoints[spawn_choice], 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
         tank2 = Tank(spawnpoints[spawn_choice - 1], 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
-        tanklist = [tank1,tank2]
+        tanklist = [(tank1, 1), (tank2, 2)] # 1 ja 2 on mängija ID-d
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
         reset = False
@@ -187,26 +200,47 @@ while running:
 
     #tank_collision = [collision.update_rect(80*s,100*s,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
 
-    for t in tanklist:
-        pg.draw.polygon(screen, "green", t.points,3) #joonistame tangi collision kasti debugimiseks
+    for t, ID in tanklist:
+        pg.draw.polygon(screen, "green", t.points, 3) # tanki collision kast debugimiseks
         bool_collision = False
-        for obj in dobjects + objects + tanklist:
-            if obj == t:
-                continue
+        other_tanks = [other_t for other_t, id in tanklist if other_t != t]
+        
+        all_collision_objects = dobjects + objects + other_tanks
+        
+        for obj in all_collision_objects:
             if collision.check_rect_rect(obj.points,t.points):
                 bool_collision = True
                 break
         if not bool_collision:
             t.pos += t.vel
-            t.angle += t.ang_vel
-
+            t.angle += t.ang_vel        # siin kogu see blokk 203-216 ma ei ole päris kindel mis see on
+                                        # sest ma ei osanud ja siis AI aitas kõvasti lol 
+        bullets_to_remove = []
         for b in bullets:
             if collision.check_circ_rect(b.pos,b.radius,collision.update_rect(100,80,t.angle,t.pos))[0]:
                 print("Hit!")
+                shooter_tank = b.shooter
+                
+                if shooter_tank == t:
+                    if t == tank1:
+                        tank2_skoor += 1
+                    elif t == tank2:
+                        tank1_skoor += 1
+                else:
+                    if shooter_tank == tank1: # lisab skoori
+                        tank1_skoor += 1
+                    elif shooter_tank == tank2:
+                        tank2_skoor += 1
+                print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
+                bullets_to_remove.append(b)
+                
                 timeout_time = 3
                 timeout = True
-                tanklist[tanklist.index(t)] = None
-                tanklist.remove(None)
+                tanklist.remove((t, ID))
+                break
+        for b in bullets_to_remove:
+            if b in bullets:
+                bullets.remove(b)
 
     for obj in objects + dobjects:
         pg.draw.polygon(screen, obj.color, obj.points)
@@ -238,7 +272,11 @@ while running:
         b.radius = (bullet_r*0.2*b.time/bullet_time + 0.8*bullet_r)*s
         if b.time <= 0:
             bullets.remove(b)
-
+        
+    score_text = font.render(f"Roheline: {tank1_skoor} | Sinine: {tank2_skoor}", True, (0, 0, 0))
+    score_rect = score_text.get_rect(center=(screen_w // 2, 30))
+    screen.blit(score_text, score_rect)
+    
     pg.display.flip()
 
     # piirab FPS 120
