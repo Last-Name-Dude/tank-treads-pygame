@@ -4,3 +4,8 @@ Tanki mängu projekt
 
 Käivitamiseks sisestage käsureale "python start.py"
 Vajalikud lisamoodulid, mis peavad olema installitud on: pygame
+
+Rohelise tanki nupud on WASD + Space tulistamiseks
+
+Sinise tanki nupud on nooled + RCTRL tulistamiseks
+

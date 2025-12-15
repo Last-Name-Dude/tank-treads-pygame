@@ -221,13 +221,13 @@ while running:
                 print("Hit!")
                 shooter_tank = b.shooter
                 
-                if shooter_tank == t:
+                if shooter_tank == t:  # siin annab vastasele punkti, kui kogemata ennast lased
                     if t == tank1:
                         tank2_skoor += 1
                     elif t == tank2:
                         tank1_skoor += 1
                 else:
-                    if shooter_tank == tank1: # lisab skoori
+                    if shooter_tank == tank1: # annab punkti, kui vastast lased
                         tank1_skoor += 1
                     elif shooter_tank == tank2:
                         tank2_skoor += 1
