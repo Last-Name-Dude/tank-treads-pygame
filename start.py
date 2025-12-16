@@ -17,6 +17,15 @@ bilt_layer = pg.Surface((screen_w,screen_h))
 green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(150,150))
 blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(150,150))
 
+def shooting_anim():
+    for i in range(40):
+        i = i//2
+        if i < 10:
+            i = "0" + str(i)
+        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame00{i}.png"),(150,150)))
+    while True:
+        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame0000.png"),(150,150)))
+
 # skooriloenduri font
 try:
     font = pg.font.Font(None, 75)  
@@ -57,6 +66,7 @@ class Tank:
         self.vector = vector
         self.binds = binds
         self.points = collision.update_rect(80*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
+        self.hp = 2
 
     def update(self, dt):
         self.points = collision.update_rect(80*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
@@ -85,11 +95,15 @@ class Tank:
             kuuli_algvektor = pg.Vector2(self.vector[:])
             kuuli_algpunkt -= kuuli_algvektor*80*s #offset, et näeks välja nagu kuul tuleks torust
             bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg
-            self.delay = 150
+            self.delay = 125
+            self.shooting_anim = shooting_anim()
 
     def draw(self,surf, img):
         """Joonistab tanki ekraanile"""
-        transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
+        if self.delay > 0:
+            transform_bilt_center(surf, next(self.shooting_anim), self.pos, self.angle, self.vector)
+        else:
+            transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
 
     # def update_bullets(self):
     #     for b in self.bullets:
@@ -181,6 +195,13 @@ while running:
             reset = True
 
     if reset:
+        if tank2.hp != 0 and tank1.hp != 0:
+            pass
+        elif tank2.hp == 0:
+            tank1_skoor += 1
+        else:
+            tank2_skoor += 1
+        print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
         bullets = []
         objects,dobjects,spawnpoints,s = map_generator(randint(1,5))
         spawn_choice = randint(0,1)
@@ -241,7 +262,6 @@ while running:
         for obj in dobjects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
-                particles.puff(bilt_layer, (400, 100), 1, 1)
                 b.vec = b.vec.reflect(coll_info[1])
                 obj.hp -= 1
                 if obj.hp == 3:
@@ -256,15 +276,13 @@ while running:
         for t in tanklist:
             if collision.check_circ_rect(b.pos, b.radius, collision.update_rect(100, 80, t.angle, t.pos))[0]:
                 print("Hit!")
+                particles.puff(bilt_layer, b.pos, 1, 1)
                 shake = offset(1,20, 1, dt)
-                if t == tank1:
-                    tank2_skoor += 1
-                elif t == tank2:
-                    tank1_skoor += 1
-                print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
-                timeout_time = 3
-                timeout = True
-                tanklist.remove(t)
+                t.hp -= 1
+                if t.hp <= 0:
+                    timeout_time = 3
+                    timeout = True
+                    tanklist.remove(t)
                 bullets.remove(b)
                 break
 

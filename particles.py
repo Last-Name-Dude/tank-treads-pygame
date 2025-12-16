@@ -39,15 +39,7 @@ class Particle(pg.sprite.Sprite):
             self.rect.center = self.pos
 
     def fade(self):
-        if self.age > self.fade_start:
-            try:
-                ratio = (self.age - self.fade_start) / (self.lifetime - self.fade_start)
-            except ZeroDivisionError:
-                ratio = .5
-            if ratio > .5:
-                ratio = .5
-            mask = int(255 * (1 - ratio))
-            self.image.fill([mask, mask, mask], special_flags=pg.BLEND_RGBA_MIN)
+        pass
 
 all_sprites = pg.sprite.Group()
 def particles_initalize():
