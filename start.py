@@ -195,11 +195,11 @@ while running:
             reset = True
 
     if reset:
-        if tank2.hp != 0 and tank1.hp != 0:
+        if tank2.hp == 0 and tank1.hp == 0:
             pass
         elif tank2.hp == 0:
             tank1_skoor += 1
-        else:
+        elif tank1.hp == 0:
             tank2_skoor += 1
         print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
         bullets = []
