@@ -46,8 +46,6 @@ tank_speed = 300
 s = 1
 bullets = []
 
-# ekraani_keskkoht = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-
 class Tank:
     """
     Kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
@@ -100,18 +98,11 @@ class Tank:
 
     def draw(self,surf, img):
         """Joonistab tanki ekraanile"""
-        if self.delay > 0:
-            transform_bilt_center(surf, next(self.shooting_anim), self.pos, self.angle, self.vector)
-        else:
-            transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
-
-    # def update_bullets(self):
-    #     for b in self.bullets:
-    #         b.pos -= b.vec * dt * scaled_bullet_speed
-    #         b.time -= dt * 10
-    #         b.radius = bullet_r*0.2*b.time/bullet_time + 0.8*bullet_r
-    #         if b.time <= 0:
-    #             self.bullets.remove(b)
+        # if self.delay > 0:
+        #     transform_bilt_center(surf, next(self.shooting_anim), self.pos, self.angle, self.vector)
+        # else:
+        #     transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
+        transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
 
 class bullet:
     def __init__(self,pos,vec,time,owner):
@@ -129,6 +120,9 @@ class Wall:
         self.color = color
 
 def offset(count, size,time, dt):
+    """
+    Tagastab mingi suvalise vectori. Kasutatakse ekraani väristamiseks
+    """
     while count > 0:
         count -= dt * time
         yield (uniform(0,1)*size*count**2, uniform(0,1)*size*count**2)
@@ -136,7 +130,8 @@ def offset(count, size,time, dt):
         yield (0, 0)
 
 
-def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata
+def transform_bilt_center(surf, img, pos, angle, vec):
+    """selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata"""
     rotated = pg.transform.rotate(pg.transform.scale_by(img,s),angle)
     e = pg.Vector2()
     e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 30 * s
@@ -145,7 +140,7 @@ def transform_bilt_center(surf, img, pos, angle, vec): #selle funktsiooniga mani
 
 def map_generator(nr):
     ret_dobjects = [] #destructable objects. Seinad, mida saab lõhkuda.
-    ret_objects = [] #objektide kogum. Olgu selleks kas seinad, teised tangid vms
+    ret_objects = [] #objektide kogum. Olgu selleks välisääre seinad
     ret_spawnpoints = []
     with open("maps/map_0" + str(nr) +".txt") as f: gamemap = [i.strip() for i in f.readlines()]
 
@@ -190,11 +185,13 @@ particuls = particles.particles_initalize()
 
 while running:
     if timeout:
+        #Kui tank ära sureb, on ~3 sekundiline ajavahemik, mil ta peab elus püsima, et punkti saada
         timeout_time -= 1*dt
         if timeout_time <= 0:
             reset = True
 
     if reset:
+        #Toimub mängu alguses ja siis, kui mõlemad tankid ära kärvavad
         if tank2.hp == 0 and tank1.hp == 0:
             pass
         elif tank2.hp == 0:
@@ -218,7 +215,7 @@ while running:
             running = False
 
     #kirjutab kogu ekraani üle
-    bilt_layer.fill("#587270")
+    bilt_layer.fill("#576b72")
 
     keys = pg.key.get_pressed() #nupud
 
@@ -232,19 +229,18 @@ while running:
         tank2.check_input(dt,keys)
         tank2.draw(bilt_layer,blu_tank_img)
 
-    #tank_collision = [collision.update_rect(80*s,100*s,tank.ang_vel + tank.angle,tank.pos + tank.vel) for tank in [tank1,tank2]]
-
     for t in tanklist:
-        pg.draw.polygon(bilt_layer, "green", t.points, 3) # tanki collision kast debugimiseks
+        #pg.draw.polygon(bilt_layer, "green", t.points, 3) # tanki collision kast debugimiseks
+        #allpool kontrollitakse, kas tanki järgmine positsioon kattub ühegi seinaga või mitte. Kui kattub, ei lase tankil edasi liikuda
         bool_collision = False
         other_tanks = [other_t for other_t in tanklist if other_t != t]
-        
         all_collision_objects = dobjects + objects + other_tanks
         
         for obj in all_collision_objects:
             if collision.check_rect_rect(obj.points,t.points):
                 bool_collision = True
                 break
+
         if not bool_collision:
             t.pos += t.vel
             t.angle += t.ang_vel
@@ -253,12 +249,15 @@ while running:
         pg.draw.polygon(bilt_layer, obj.color, obj.points)
 
     for b in bullets:
+        #Kuulidega seotud kokkupõrgete kontrollimine
         pg.draw.circle(bilt_layer, "black", b.pos, b.radius)
         for obj in objects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
                 b.vec = b.vec.reflect(coll_info[1])
 
+        #Lõhutavad seinad
+        #Seina värv muutub vastavalt tema lõhutavuse tasemele
         for obj in dobjects:
             coll_info = collision.check_circ_rect(b.pos-b.vec*bullet_speed*dt,b.radius,obj.points)
             if coll_info[0]:
@@ -276,11 +275,11 @@ while running:
         for t in tanklist:
             if collision.check_circ_rect(b.pos, b.radius, collision.update_rect(100, 80, t.angle, t.pos))[0]:
                 print("Hit!")
-                particles.puff(bilt_layer, b.pos, 1, 1)
+                particles.puff(bilt_layer, b.pos, 1, 1) #Kui tank pihta saab tekitab suitsupilve
                 shake = offset(1,20, 1, dt)
                 t.hp -= 1
+                timeout_time = 3 #Iga kord kui keegi pihta saab siis timeout-i taimer alustab otsast
                 if t.hp <= 0:
-                    timeout_time = 3
                     timeout = True
                     tanklist.remove(t)
                 bullets.remove(b)
@@ -299,6 +298,7 @@ while running:
     score_rect = score_text.get_rect(center=(screen_w // 2, 30))
     bilt_layer.blit(score_text, score_rect)
 
+    #Ekraani väristamiseks
     screen.blit(bilt_layer, next(shake))
 
     pg.display.flip()

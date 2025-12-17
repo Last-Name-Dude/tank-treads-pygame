@@ -71,7 +71,7 @@ def check_rect_rect(rp1,rp2): #pean tunnistama et see on natuke kehvake aga väh
     rp1 on järjend kõikedest ristküliku punktidest
     rp2 on järjend kõikidest teise ristküliku punktidest
 
-    Siia funktsiooni tuleks veel lisada kokkupuute pinna normaalvektori.
+    Siia funktsiooni võiks veel lisada kokkupuute pinna normaalvektori.
     """
     #kontrollime iga erineva külje kohta, kas ülekatte on või ei ole.
     #Kui avastame kuskil et ülekatet ei ole, ei ole vaja rohkem kontrollida ja kutsume return False

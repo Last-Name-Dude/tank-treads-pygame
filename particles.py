@@ -25,6 +25,7 @@ class Particle(pg.sprite.Sprite):
             self.kill()
 
     def shrink(self):
+        """Pilve suurus ajas kasvab"""
         if self.age > self.fade_start:
             try:
                 ratio = (self.age - self.fade_start) / (self.lifetime - self.fade_start)
@@ -38,6 +39,7 @@ class Particle(pg.sprite.Sprite):
             self.rect.center = self.pos
 
     def fade(self):
+        """Pilve läbipaistvus ajas väheneb"""
         if self.age > self.fade_start:
             try:
                 ratio = (self.age - self.fade_start) / (self.lifetime - self.fade_start)
@@ -49,7 +51,9 @@ class Particle(pg.sprite.Sprite):
             self.image.fill([0,0,0,mask], special_flags=pg.BLEND_RGBA_MIN)
 
 all_sprites = pg.sprite.Group()
+
 def particles_initalize():
+    #Tagastab sprite grupi, kuhu see programm hakkab sprite sisse toppima kui kutsutakse välja alljärgnev funktsioon
     return (all_sprites)
 
 def puff(surf, pos, radius, scale):
