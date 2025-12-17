@@ -4,14 +4,14 @@ from random import uniform
 
 puff_img = pg.transform.scale(pg.image.load("puff.png"),(150,150))
 
+#See on maha vehitud ja muudetud selle põhjalt https://github.com/kidscancode/pygame_tutorials/blob/master/examples/particle%20demo.py
 class Particle(pg.sprite.Sprite):
-    def __init__(self, groups, image, pos, lifetime=500, speed_max=50, speed_min=10, fade_start=1):
+    def __init__(self, groups, image, pos, lifetime=500, fade_start=10):
         pg.sprite.Sprite.__init__(self, groups)
         self.image = image.copy()
         self.pos = pg.Vector2(pos)
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
-        self.vel = pg.Vector2(uniform(speed_min, speed_max), 0).rotate(uniform(0, 360))
         self.lifetime = lifetime
         self.age = 0
         self.fade_start = fade_start
@@ -19,7 +19,6 @@ class Particle(pg.sprite.Sprite):
     def update(self, dt):
         self.shrink()
         self.fade()
-        self.pos += self.vel * dt
         self.rect.center = self.pos
         self.age += dt * 1000
         if self.age > self.lifetime:
@@ -39,7 +38,15 @@ class Particle(pg.sprite.Sprite):
             self.rect.center = self.pos
 
     def fade(self):
-        pass
+        if self.age > self.fade_start:
+            try:
+                ratio = (self.age - self.fade_start) / (self.lifetime - self.fade_start)
+            except ZeroDivisionError:
+                ratio = 1
+            if ratio > 1:
+                ratio = 1
+            mask = int(255 * (1 - ratio))
+            self.image.fill([0,0,0,mask], special_flags=pg.BLEND_RGBA_MIN)
 
 all_sprites = pg.sprite.Group()
 def particles_initalize():
