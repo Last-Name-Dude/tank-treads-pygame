@@ -4,11 +4,13 @@ from random import uniform
 
 puff_img = pg.transform.scale(pg.image.load("puff.png"),(150,150))
 
-#See on maha vehitud ja muudetud selle põhjalt https://github.com/kidscancode/pygame_tutorials/blob/master/examples/particle%20demo.py
+#Allpool on tehtud selle põhjalt https://github.com/kidscancode/pygame_tutorials/blob/master/examples/particle%20demo.py
+#Moditud vastavalt vajadusele
 class Particle(pg.sprite.Sprite):
-    def __init__(self, groups, image, pos, lifetime=500, fade_start=10):
+    def __init__(self, groups, image, pos, scale=1, lifetime=500, fade_start=10):
         pg.sprite.Sprite.__init__(self, groups)
-        self.image = image.copy()
+        self.scale = scale
+        self.image = pg.transform.scale_by(image.copy(),self.scale)
         self.pos = pg.Vector2(pos)
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
@@ -17,6 +19,7 @@ class Particle(pg.sprite.Sprite):
         self.fade_start = fade_start
 
     def update(self, dt):
+        """Kutsume välja funktsioonid spraidi manipuleerimiseks ja uuendame selle vanust"""
         self.shrink()
         self.fade()
         self.rect.center = self.pos
@@ -33,8 +36,7 @@ class Particle(pg.sprite.Sprite):
                 ratio = 1
             if ratio > 1:
                 ratio = 1
-            scale = 1 - ratio
-            self.image = pg.transform.rotozoom(puff_img.copy(), 0, ratio)
+            self.image = pg.transform.scale_by(puff_img.copy(),ratio*self.scale)
             self.rect = self.image.get_rect()
             self.rect.center = self.pos
 
@@ -56,5 +58,5 @@ def particles_initalize():
     #Tagastab sprite grupi, kuhu see programm hakkab sprite sisse toppima kui kutsutakse välja alljärgnev funktsioon
     return (all_sprites)
 
-def puff(surf, pos, radius, scale):
-    Particle(all_sprites, puff_img, pos)
+def puff(surf, pos, scale):
+    Particle(all_sprites, puff_img, pos, scale)

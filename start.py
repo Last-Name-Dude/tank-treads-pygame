@@ -2,29 +2,31 @@ import pygame as pg
 from math import *
 import collision
 import particles
-from random import randint
-from random import uniform
+from random import randint, uniform, choice
 #Silver Erm ja Priit Laidma
 
 pg.init()
 
-# screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
-screen_w = 1400
-screen_h = 900
-screen = pg.display.set_mode((screen_w, screen_h))
-bilt_layer = pg.Surface((screen_w,screen_h))
 
-green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(150,150))
-blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(150,150))
+screen = pg.display.set_mode((0, 0), pg.FULLSCREEN) #ekraan
+#screen = pg.display.set_mode((1400, 900))
+
+screen_w = screen.get_width()
+screen_h = screen.get_height()
+
+bilt_layer = pg.Surface((screen_w,screen_h)) #kiht, kuhu joonistame asju. Seda selleks, et ekraani saaks hiljem väristada
+
+green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(1024,1024))
+blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(1024,1024))
 
 def shooting_anim():
     for i in range(40):
         i = i//2
         if i < 10:
             i = "0" + str(i)
-        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame00{i}.png"),(150,150)))
+        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame00{i}.png"),(1024,1024)))
     while True:
-        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame0000.png"),(150,150)))
+        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame0000.png"),(1024,1024)))
 
 # skooriloenduri font
 try:
@@ -49,13 +51,12 @@ bullets = []
 class Tank:
     """
     Kuna tahame, et ekraanil oleks mitu tanki loome tanki klassi
-    attributes:
     pos on tanki asukoht
     angle on tanki nurk
-    vektor on tanki sihivektor
+    vector on tanki sihivektor
     binds on järjend, kus on sees tanki juhtimiseks vajalikud nupud nt: [key_w,key_a,key_s,key_d,key_space], kus viimane on tulistamiseks ja ülejäänud liikumiseks
     """
-    delay = 0
+    delay = 0 #kui tank tulistab, on viivitus enne mida ta uuesti tulistada ei saa
     vel = pg.Vector2(0,0) #kiirus
     ang_vel = 0 #nurkkiirus
     def __init__(self,pos,angle,vector,binds):
@@ -63,11 +64,11 @@ class Tank:
         self.angle = angle
         self.vector = vector
         self.binds = binds
-        self.points = collision.update_rect(80*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
+        self.points = collision.update_rect(90*s,100*s,self.angle,self.vel)
         self.hp = 2
 
     def update(self, dt):
-        self.points = collision.update_rect(80*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
+        self.points = collision.update_rect(90*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
         self.vector.xy = sin(self.angle/180*pi), cos(self.angle/180*pi)
         if self.delay > 0:
             self.delay -= 100*dt
@@ -91,8 +92,8 @@ class Tank:
         if keys[self.binds[4]] and self.delay <= 0:
             kuuli_algpunkt = pg.Vector2(self.pos[:])
             kuuli_algvektor = pg.Vector2(self.vector[:])
-            kuuli_algpunkt -= kuuli_algvektor*80*s #offset, et näeks välja nagu kuul tuleks torust
-            bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg
+            kuuli_algpunkt -= kuuli_algvektor*70*s #offset, et näeks välja nagu kuul tuleks torust
+            bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg ning kes tulistas
             self.delay = 125
             self.shooting_anim = shooting_anim()
 
@@ -105,7 +106,7 @@ class Tank:
         transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
 
 class bullet:
-    def __init__(self,pos,vec,time,owner):
+    def __init__(self,pos,vec,time,owner): #asukoht, sihivektor ja eluaeg ning kes tulistas
         self.pos = pos
         self.vec = vec
         self.time = time
@@ -132,23 +133,25 @@ def offset(count, size,time, dt):
 
 def transform_bilt_center(surf, img, pos, angle, vec):
     """selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata"""
-    rotated = pg.transform.rotate(pg.transform.scale_by(img,s),angle)
+    rotated = pg.transform.rotate(pg.transform.scale_by(img,s/7),angle)
     e = pg.Vector2()
-    e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 30 * s
-    e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 30 * s
+    e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 18 * s
+    e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 18 * s
     surf.blit(rotated, e)
 
 def map_generator(nr):
+    """see funktsioon loeb maps kaustast suvalise tekstifaili ja selle põhjal konstrueerib kaardi, mille peal mängitakse"""
     ret_dobjects = [] #destructable objects. Seinad, mida saab lõhkuda.
     ret_objects = [] #objektide kogum. Olgu selleks välisääre seinad
     ret_spawnpoints = []
     with open("maps/map_0" + str(nr) +".txt") as f: gamemap = [i.strip() for i in f.readlines()]
 
-    ret_s = 8/max([len(list(gamemap[0]))/2,len(gamemap)]) #väga oluline muutuja. Skaleerib kõike mängus
+    ret_s = 8/max([len(list(gamemap[0]))/2,len(gamemap)])*screen_w/1400 #väga oluline muutuja. Skaleerib kõike mängus
 
     scale_w = screen_w/(len(list(gamemap[0]))/2+0.5)
     scale_h = screen_h/(len(gamemap)+1)
 
+    #Allpool olev tsükel lisab vastavalt tähemärgile objektide järjendisse seina, kui täht on b, ja tanki potentsiaalse tekkekoha, kui on s
     for line,i in zip(gamemap,range(len(gamemap))):
         for item,j in zip(list(line),range(len(list(line)))):
             if item == "-":
@@ -161,6 +164,7 @@ def map_generator(nr):
                 else:
                     ret_dobjects.append(Wall(scale_w,scale_h/10,0,pg.Vector2(j/2*scale_w+scale_w/2,i*scale_h+scale_h),"#dfe0d9"))
 
+    #Välised seinad, mida lõhkuda ei saa
     ret_objects.append(Wall(screen_w,10,0,pg.Vector2(screen_w/2,0),"#514f51"))
     ret_objects.append(Wall(screen_w,10,0,pg.Vector2(screen_w/2,screen_h),"#514f51"))
     ret_objects.append(Wall(10,screen_h,0,pg.Vector2(0,screen_h/2),"#514f51"))
@@ -179,13 +183,15 @@ running = True
 timeout = False
 reset = True
 
+r_toggle = False
+
 timeout_time = 0
 
 particuls = particles.particles_initalize()
 
 while running:
     if timeout:
-        #Kui tank ära sureb, on ~3 sekundiline ajavahemik, mil ta peab elus püsima, et punkti saada
+        #Kui tank ära sureb, on ~3 sekundiline ajavahemik, mil vastastank peab elus püsima, et punkti saada
         timeout_time -= 1*dt
         if timeout_time <= 0:
             reset = True
@@ -201,9 +207,12 @@ while running:
         print(f"Tank 1 skoor (roheline) : {tank1_skoor} | Tank 2 skoor (sinine): {tank2_skoor}")
         bullets = []
         objects,dobjects,spawnpoints,s = map_generator(randint(1,5))
-        spawn_choice = randint(0,1)
-        tank1 = Tank(spawnpoints[spawn_choice], 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
-        tank2 = Tank(spawnpoints[spawn_choice - 1], 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
+
+        spawn_choice = choice(spawnpoints) #võimalikest tekkekohtadest valitakse üks
+        tank1 = Tank(spawn_choice, choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
+        spawnpoints.remove(spawn_choice) #et tankid üksteise otsa ei tekiks
+        tank2 = Tank(choice(spawnpoints), choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
+
         tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
@@ -213,11 +222,23 @@ while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                running = False
+
 
     #kirjutab kogu ekraani üle
     bilt_layer.fill("#576b72")
 
     keys = pg.key.get_pressed() #nupud
+
+    if keys[pg.K_r] and keys[pg.K_LCTRL]: #Vajutades klahvikombinatsiooni saab uuesti mängu laadida
+        if r_toggle:
+            reset = True
+            r_toggle = False
+    else:
+        r_toggle = True
+
 
     #Kutsume välja igale tankile vastavad funktsioonid
     if tank1 is not None:
@@ -273,9 +294,9 @@ while running:
                     dobjects.remove(obj)
 
         for t in tanklist:
-            if collision.check_circ_rect(b.pos, b.radius, collision.update_rect(100, 80, t.angle, t.pos))[0]:
+            if collision.check_circ_rect(b.pos, b.radius, t.points)[0]:
                 print("Hit!")
-                particles.puff(bilt_layer, b.pos, 1, 1) #Kui tank pihta saab tekitab suitsupilve
+                particles.puff(bilt_layer, b.pos, s) #Kui tank pihta saab tekitab suitsupilve
                 shake = offset(1,20, 1, dt)
                 t.hp -= 1
                 timeout_time = 3 #Iga kord kui keegi pihta saab siis timeout-i taimer alustab otsast
@@ -287,9 +308,10 @@ while running:
 
         b.pos -= b.vec * dt * scaled_bullet_speed
         b.time -= dt * 10
-        b.radius = (bullet_r*0.2*b.time/bullet_time + 0.8*bullet_r)*s
+        b.radius = (bullet_r*0.2*b.time/bullet_time + 0.8*bullet_r)*s #kuuli raadius kahane aja jooksul
         if b.time <= 0:
             bullets.remove(b)
+            particles.puff(bilt_layer, b.pos, s*0.4)
 
     particuls.update(dt)
     particuls.draw(bilt_layer)

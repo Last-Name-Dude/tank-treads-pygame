@@ -3,7 +3,7 @@ from pygame import Vector2
 
 def update_rect(lai,pikk,nurk,pos):
     """
-    Tagastab parameetritele vastava ristküliku nurkade punktid
+    Tagastab parameetritele vastava ristküliku nurkade otspunktid
     """
     j = Vector2(sin(nurk/180*pi), cos(nurk/180*pi))
     i = j.rotate(90)
