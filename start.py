@@ -207,7 +207,7 @@ while running:
         spawn_choice = randint(0,1)
         tank1 = Tank(spawnpoints[spawn_choice], 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
         tank2 = Tank(spawnpoints[spawn_choice - 1], 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
-        tanklist = [tank1,tank2] # 1 ja 2 on mängija ID-d
+        tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
         scaled_tank_speed = tank_speed*s
         reset = False
