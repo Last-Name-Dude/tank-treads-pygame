@@ -7,11 +7,12 @@ puff_img = pg.transform.scale(pg.image.load("puff.png"),(150,150))
 #Allpool on tehtud selle põhjalt https://github.com/kidscancode/pygame_tutorials/blob/master/examples/particle%20demo.py
 #Moditud vastavalt vajadusele
 class Particle(pg.sprite.Sprite):
-    def __init__(self, groups, image, pos, scale=1, lifetime=500, fade_start=10):
+    def __init__(self, groups, image, pos, scale=1, vel=0, lifetime=500, fade_start=10):
         pg.sprite.Sprite.__init__(self, groups)
         self.scale = scale
         self.image = pg.transform.scale_by(image.copy(),self.scale)
-        self.pos = pg.Vector2(pos)
+        self.vel = vel
+        self.pos = pg.Vector2(pos) + pg.Vector2(vel)
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
         self.lifetime = lifetime
@@ -60,3 +61,7 @@ def particles_initalize():
 
 def puff(surf, pos, scale):
     Particle(all_sprites, puff_img, pos, scale)
+
+def fat_puff(surf, pos, scale, radius=10):
+    for i in range(6):
+        Particle(all_sprites, puff_img, pos, scale)

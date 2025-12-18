@@ -1,9 +1,11 @@
+#Silver Erm ja Priit Laidma
+#Tank Treads pygame mäng, kus kaks kohaliku mängijat juhivad tanki ja püüavad võita
+
 import pygame as pg
 from math import *
 import collision
 import particles
 from random import randint, uniform, choice
-#Silver Erm ja Priit Laidma
 
 pg.init()
 
@@ -19,14 +21,18 @@ bilt_layer = pg.Surface((screen_w,screen_h)) #kiht, kuhu joonistame asju. Seda s
 green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(1024,1024))
 blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(1024,1024))
 
-def shooting_anim():
+def shooting_anim(nr):
+    if nr == 1:
+        folder = "green_shooting_anim"
+    else:
+        folder = "blu_shooting_anim"
     for i in range(40):
         i = i//2
         if i < 10:
             i = "0" + str(i)
-        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame00{i}.png"),(1024,1024)))
+        yield(pg.transform.scale(pg.image.load(f"{folder}/frame00{i}.png"),(1024,1024)))
     while True:
-        yield(pg.transform.scale(pg.image.load(f"shooting_anim/frame0000.png"),(1024,1024)))
+        yield(pg.transform.scale(pg.image.load(f"{folder}/frame0000.png"),(1024,1024)))
 
 # skooriloenduri font
 try:
@@ -59,13 +65,14 @@ class Tank:
     delay = 0 #kui tank tulistab, on viivitus enne mida ta uuesti tulistada ei saa
     vel = pg.Vector2(0,0) #kiirus
     ang_vel = 0 #nurkkiirus
-    def __init__(self,pos,angle,vector,binds):
+    def __init__(self,pos,angle,vector,binds,nr):
         self.pos = pos
         self.angle = angle
         self.vector = vector
         self.binds = binds
         self.points = collision.update_rect(90*s,100*s,self.angle,self.vel)
         self.hp = 2
+        self.nr = nr
 
     def update(self, dt):
         self.points = collision.update_rect(90*s,100*s,self.ang_vel + self.angle,self.pos + self.vel)
@@ -95,15 +102,14 @@ class Tank:
             kuuli_algpunkt -= kuuli_algvektor*70*s #offset, et näeks välja nagu kuul tuleks torust
             bullets.append(bullet(kuuli_algpunkt,kuuli_algvektor,bullet_time,self)) #asukoht, sihivektor ja eluaeg ning kes tulistas
             self.delay = 125
-            self.shooting_anim = shooting_anim()
+            self.shooting_anim = shooting_anim(self.nr)
 
     def draw(self,surf, img):
         """Joonistab tanki ekraanile"""
-        # if self.delay > 0:
-        #     transform_bilt_center(surf, next(self.shooting_anim), self.pos, self.angle, self.vector)
-        # else:
-        #     transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
-        transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
+        if self.delay > 0:
+             transform_bilt_center(surf, next(self.shooting_anim), self.pos, self.angle, self.vector)
+        else:
+            transform_bilt_center(surf, img, self.pos, self.angle, self.vector)
 
 class bullet:
     def __init__(self,pos,vec,time,owner): #asukoht, sihivektor ja eluaeg ning kes tulistas
@@ -171,8 +177,8 @@ def map_generator(nr):
     ret_objects.append(Wall(10,screen_h,0,pg.Vector2(screen_w,screen_h/2),"#514f51"))
     return(ret_objects,ret_dobjects,ret_spawnpoints,ret_s)
 
-tank1 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
-tank2 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
+tank1 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE], 1)
+tank2 = Tank(pg.Vector2(0, 0), 0, pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL], 2)
 
 global tank1_skoor, tank2_skoor
 tank1_skoor = 0
@@ -209,9 +215,9 @@ while running:
         objects,dobjects,spawnpoints,s = map_generator(randint(1,5))
 
         spawn_choice = choice(spawnpoints) #võimalikest tekkekohtadest valitakse üks
-        tank1 = Tank(spawn_choice, choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE])
+        tank1 = Tank(spawn_choice, choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_w, pg.K_a, pg.K_s, pg.K_d, pg.K_SPACE],1)
         spawnpoints.remove(spawn_choice) #et tankid üksteise otsa ei tekiks
-        tank2 = Tank(choice(spawnpoints), choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL])
+        tank2 = Tank(choice(spawnpoints), choice([i*60 for i in range(6)]), pg.Vector2(), [pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT, pg.K_RCTRL],2)
 
         tanklist = [tank1,tank2]
         scaled_bullet_speed = bullet_speed*s
