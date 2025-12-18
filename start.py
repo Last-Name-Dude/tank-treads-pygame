@@ -1,6 +1,11 @@
 #Silver Erm ja Priit Laidma
 #Tank Treads pygame mäng, kus kaks kohaliku mängijat juhivad tanki ja püüavad võita
 
+#Kasutatud ressursid:
+#https://math.stackexchange.com/questions/190111/how-to-check-if-a-point-is-inside-a-rectangle
+#https://github.com/kidscancode/pygame_tutorials/blob/master/examples/particle%20demo.py
+#https://www.pygame.org/docs/
+
 import pygame as pg
 from math import *
 import collision
@@ -21,18 +26,25 @@ bilt_layer = pg.Surface((screen_w,screen_h)) #kiht, kuhu joonistame asju. Seda s
 green_tank_img = pg.transform.scale(pg.image.load("roheline_tank.png"),(1024,1024))
 blu_tank_img = pg.transform.scale(pg.image.load("sinine_tank.png"),(1024,1024))
 
+green_shooting_anim = []
+blu_shooting_anim = []
+
+for i in range(20):
+    if i < 10:
+        i = "0" + str(i)
+    green_shooting_anim.append(pg.transform.scale(pg.image.load(f"green_shooting_anim/frame00{i}.png"),(1024,1024)))
+    blu_shooting_anim.append(pg.transform.scale(pg.image.load(f"blu_shooting_anim/frame00{i}.png"),(1024,1024)))
+
 def shooting_anim(nr):
     if nr == 1:
-        folder = "green_shooting_anim"
+        anim = green_shooting_anim
     else:
-        folder = "blu_shooting_anim"
+        anim = blu_shooting_anim
     for i in range(40):
         i = i//2
-        if i < 10:
-            i = "0" + str(i)
-        yield(pg.transform.scale(pg.image.load(f"{folder}/frame00{i}.png"),(1024,1024)))
+        yield(anim[i])
     while True:
-        yield(pg.transform.scale(pg.image.load(f"{folder}/frame0000.png"),(1024,1024)))
+        yield(anim[-1])
 
 # skooriloenduri font
 try:
@@ -139,7 +151,7 @@ def offset(count, size,time, dt):
 
 def transform_bilt_center(surf, img, pos, angle, vec):
     """selle funktsiooniga manipuleerime pilte nende nurga ja positsiooni põhjal, ilma neid moonutamata"""
-    rotated = pg.transform.rotate(pg.transform.scale_by(img,s/7),angle)
+    rotated = pg.transform.rotozoom(img,angle,s/7)
     e = pg.Vector2()
     e.x = pos.x - (rotated.get_rect()[3])/2 - vec.x * 18 * s
     e.y = pos.y - (rotated.get_rect()[2])/2 - vec.y * 18 * s
@@ -302,7 +314,7 @@ while running:
         for t in tanklist:
             if collision.check_circ_rect(b.pos, b.radius, t.points)[0]:
                 print("Hit!")
-                particles.puff(bilt_layer, b.pos, s) #Kui tank pihta saab tekitab suitsupilve
+                particles.fat_puff(bilt_layer, t.pos, s*0.5, 3) #Kui tank pihta saab tekitab suitsupilve
                 shake = offset(1,20, 1, dt)
                 t.hp -= 1
                 timeout_time = 3 #Iga kord kui keegi pihta saab siis timeout-i taimer alustab otsast
@@ -329,9 +341,10 @@ while running:
     #Ekraani väristamiseks
     screen.blit(bilt_layer, next(shake))
 
+    screen.blit(pg.font.Font(None, 30).render(f"FPS: {round(1/dt,0)}" if dt != 0 else f"FPS: 0" , True, (0,0,0)),(20,20))
     pg.display.flip()
 
-    # piirab FPS 120
-    dt = clock.tick(120) / 1000
+    # piirab FPS 60
+    dt = clock.tick(60) / 1000
 
 pg.quit()
